@@ -24,12 +24,12 @@ import (
 var addr = flag.String("listen-address", ":8080", "The address to listen on for HTTP requests.")
 
 var (
-	openPorts = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "portscanner_open_ports_total",
-			Help: "The total amount of open ports found",
+	openPorts = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "portscanner_open_ports",
+			Help: "The amount of open ports",
 		},
-		[]string{"service"},
+		[]string{"pod", "namespace"},
 	)
 )
 
@@ -102,12 +102,13 @@ func main() {
 				log.Printf("scanning port %d-%d...\n", 1024, 30000)
 
 				openedPorts := ps.GetOpenedPort(1024, 30000)
+				openPorts.With(prometheus.Labels{"pod": pod.ObjectMeta.Name, "namespace": pod.ObjectMeta.Namespace}).Set(float64(len(openedPorts)))
 
 				for i := 0; i < len(openedPorts); i++ {
 					port := openedPorts[i]
-					openPorts.With(prometheus.Labels{"service": "blarb"}).Add(1)
 					log.Print(" ", port, " [open]")
 				}
+
 			}
 			time.Sleep(300 * time.Second)
 		}
