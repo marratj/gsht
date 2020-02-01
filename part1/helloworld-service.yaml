@@ -1,23 +1,18 @@
 apiVersion: v1
 kind: Service
 metadata:
-  creationTimestamp: "2020-01-28T07:51:15Z"
   labels:
     app: helloworld
+    prometheus: k8s
   name: helloworld
   namespace: default
-  resourceVersion: "616354"
-  selfLink: /api/v1/namespaces/default/services/helloworld
-  uid: 60524c6b-b0bc-4c80-b9ba-be7933bdfa5f
 spec:
-  clusterIP: 172.31.239.106
   ports:
   - port: 8080
     protocol: TCP
     targetPort: 8080
+    name: web
   selector:
     app: helloworld
   sessionAffinity: None
   type: ClusterIP
-status:
-  loadBalancer: {}
