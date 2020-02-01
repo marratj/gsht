@@ -92,15 +92,16 @@ func main() {
 			}
 
 			for _, pod := range podList {
+
 				log.Printf("Pod: %s - IP to scan: %s", pod.ObjectMeta.Name, pod.Status.PodIP)
 
-				// scan Pod with a 2 second timeout per port in 10 concurrent threads
-				ps := portscanner.NewPortScanner(pod.Status.PodIP, 2*time.Second, 10)
+				// scan Pod with a 50 millisecond timeout per port in 10 concurrent threads
+				ps := portscanner.NewPortScanner(pod.Status.PodIP, 50*time.Millisecond, 100)
 
 				// get opened port
-				log.Printf("scanning port %d-%d...\n", 8000, 10000)
+				log.Printf("scanning port %d-%d...\n", 1024, 30000)
 
-				openedPorts := ps.GetOpenedPort(8000, 10000)
+				openedPorts := ps.GetOpenedPort(1024, 30000)
 
 				for i := 0; i < len(openedPorts); i++ {
 					port := openedPorts[i]
@@ -108,7 +109,9 @@ func main() {
 					log.Print(" ", port, " [open]")
 				}
 			}
+			time.Sleep(300 * time.Second)
 		}
+
 	}()
 
 	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
