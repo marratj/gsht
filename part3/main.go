@@ -99,9 +99,9 @@ func main() {
 				ps := portscanner.NewPortScanner(pod.Status.PodIP, 50*time.Millisecond, 100)
 
 				// get opened port
-				log.Printf("scanning port %d-%d...\n", 1024, 30000)
+				log.Printf("scanning port %d-%d...\n", 0, 65535)
 
-				openedPorts := ps.GetOpenedPort(1024, 30000)
+				openedPorts := ps.GetOpenedPort(0, 65535)
 				openPorts.With(prometheus.Labels{"pod": pod.ObjectMeta.Name, "namespace": pod.ObjectMeta.Namespace}).Set(float64(len(openedPorts)))
 
 				for i := 0; i < len(openedPorts); i++ {
