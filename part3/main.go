@@ -8,15 +8,11 @@ import (
 	"time"
 
 	portscanner "github.com/anvie/port-scanner"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-)
-
-const (
-	namespace   = "default"
-	serviceName = "helloworld"
 )
 
 func main() {
@@ -55,16 +51,26 @@ func main() {
 		log.Printf("Error while creating clientset: %s", err.Error())
 	}
 
-	podList, err := clientset.CoreV1().Pods(namespace).List(metav1.ListOptions{})
+	namespaces, err := clientset.CoreV1().Namespaces().List(metav1.ListOptions{})
 	if err != nil {
-		log.Printf("Could not find services: %s", err.Error())
+		log.Printf("Could not find namespaces: %s", err.Error())
 	}
 
-	for _, pod := range podList.Items {
+	var podList []v1.Pod
+
+	for _, namespace := range namespaces.Items {
+		pods, err := clientset.CoreV1().Pods(namespace.ObjectMeta.Name).List(metav1.ListOptions{})
+		if err != nil {
+			log.Printf("Could not find pods: %s", err.Error())
+		}
+		podList = append(podList, pods.Items...)
+	}
+
+	for _, pod := range podList {
 		log.Printf("Pod: %s - IP to scan: %s", pod.ObjectMeta.Name, pod.Status.PodIP)
 
-		// scan Pod with a 2 second timeout per port in 5 concurrent threads
-		ps := portscanner.NewPortScanner(pod.Status.PodIP, 2*time.Second, 5)
+		// scan Pod with a 2 second timeout per port in 10 concurrent threads
+		ps := portscanner.NewPortScanner(pod.Status.PodIP, 2*time.Second, 10)
 
 		// get opened port
 		log.Printf("scanning port %d-%d...\n", 8000, 10000)
@@ -74,7 +80,6 @@ func main() {
 		for i := 0; i < len(openedPorts); i++ {
 			port := openedPorts[i]
 			log.Print(" ", port, " [open]")
-			log.Println("  -->  ", ps.DescribePort(port))
 		}
 	}
 
