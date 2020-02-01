@@ -93,9 +93,14 @@ func main() {
 
 			for _, pod := range podList {
 
-				log.Printf("Pod: %s - IP to scan: %s", pod.ObjectMeta.Name, pod.Status.PodIP)
+				log.Printf("Pod: %s in Namespace: %s - IP to scan: %s", pod.ObjectMeta.Name, pod.ObjectMeta.Namespace, pod.Status.PodIP)
 
 				// scan Pod with a 50 millisecond timeout per port in 10 concurrent threads
+				// only if the Pod doesn't use hostNetwork: true
+				if pod.Spec.HostNetwork {
+					log.Printf("Not scanning Pod %s because it uses hostNetwork", pod.ObjectMeta.Name)
+					continue
+				}
 				ps := portscanner.NewPortScanner(pod.Status.PodIP, 50*time.Millisecond, 100)
 
 				// get opened port
