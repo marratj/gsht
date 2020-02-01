@@ -6,7 +6,7 @@ replicaCount: 1
 
 image:
   repository: marratj/port-scan-exporter
-  tag: v0.0.1
+  tag: v0.0.3
   pullPolicy: IfNotPresent
 
 nameOverride: ""
