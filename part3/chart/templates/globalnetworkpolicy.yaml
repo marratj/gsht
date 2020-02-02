@@ -1,0 +1,25 @@
+{{- if .Values.globalNetworkPolicy.enabled }}
+apiVersion: crd.projectcalico.org/v1
+kind: GlobalNetworkPolicy
+metadata:
+  labels:
+    app.kubernetes.io/name: {{ include "port-scan-exporter.name" . }}
+    helm.sh/chart: {{ include "port-scan-exporter.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+  name: {{ include "port-scan-exporter.fullname" . }}
+spec:
+  types:
+  - Ingress
+  ingress:
+  - action: Allow
+    protocol: TCP
+    source:
+      selector:
+        app.kubernetes.io/name: {{ include "port-scan-exporter.name" . }}
+      namespaceSelector:
+        projectcalico.org/name: {{ .Release.Namespace }}
+    destination:
+      ports:
+      - 0:65535
+{{- end }}

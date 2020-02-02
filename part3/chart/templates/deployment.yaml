@@ -21,7 +21,7 @@ spec:
     spec:
       securityContext:
         runAsUser: 2
-      serviceAccountName: port-scan-exporter
+      serviceAccountName: {{ include "port-scan-exporter.fullname" . }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -32,7 +32,7 @@ spec:
           - InCluster
           ports:
             - name: http
-              containerPort: 80
+              containerPort: 8080
               protocol: TCP
           livenessProbe:
             httpGet:

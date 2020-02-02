@@ -1,7 +1,12 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: port-scan-exporter
+  name: {{ include "port-scan-exporter.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "port-scan-exporter.name" . }}
+    helm.sh/chart: {{ include "port-scan-exporter.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
 rules:
 - apiGroups:
   - ""
