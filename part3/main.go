@@ -24,17 +24,35 @@ import (
 var addr = flag.String("listen-address", ":8080", "The address to listen on for HTTP requests.")
 
 var (
-	openPorts = prometheus.NewGaugeVec(
+	portScansExecuted = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "portscanner_scans_executed_total",
+			Help: "The amount of total port scans executed",
+		},
+		[]string{"scanned_pod", "scanned_namespace"},
+	)
+
+	openHighPorts = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "portscanner_open_ports",
-			Help: "The amount of currently detected open ports",
+			Name: "portscanner_open_high_ports",
+			Help: "The amount of currently detected open high ports",
+		},
+		[]string{"scanned_pod", "scanned_namespace"},
+	)
+
+	openLowPorts = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "portscanner_open_low_ports",
+			Help: "The amount of currently detected open low ports",
 		},
 		[]string{"scanned_pod", "scanned_namespace"},
 	)
 )
 
 func init() {
-	prometheus.MustRegister(openPorts)
+	prometheus.MustRegister(portScansExecuted)
+	prometheus.MustRegister(openHighPorts)
+	prometheus.MustRegister(openLowPorts)
 }
 
 func main() {
@@ -93,6 +111,8 @@ func main() {
 
 			for _, pod := range podList {
 
+				portScansExecuted.With(prometheus.Labels{"scanned_pod": pod.ObjectMeta.Name, "scanned_namespace": pod.ObjectMeta.Namespace}).Inc()
+
 				log.Printf("Pod: %s in Namespace: %s - IP to scan: %s", pod.ObjectMeta.Name, pod.ObjectMeta.Namespace, pod.Status.PodIP)
 
 				// scan Pod with a 50 millisecond timeout per port in 10 concurrent threads
@@ -107,10 +127,17 @@ func main() {
 				log.Printf("scanning port %d-%d...\n", 0, 65535)
 
 				openedPorts := ps.GetOpenedPort(0, 65535)
-				openPorts.With(prometheus.Labels{"scanned_pod": pod.ObjectMeta.Name, "scanned_namespace": pod.ObjectMeta.Namespace}).Set(float64(len(openedPorts)))
+
+				openLowPorts.With(prometheus.Labels{"scanned_pod": pod.ObjectMeta.Name, "scanned_namespace": pod.ObjectMeta.Namespace}).Set(float64(0))
+				openHighPorts.With(prometheus.Labels{"scanned_pod": pod.ObjectMeta.Name, "scanned_namespace": pod.ObjectMeta.Namespace}).Set(float64(0))
 
 				for i := 0; i < len(openedPorts); i++ {
 					port := openedPorts[i]
+					if port < 1024 {
+						openLowPorts.With(prometheus.Labels{"scanned_pod": pod.ObjectMeta.Name, "scanned_namespace": pod.ObjectMeta.Namespace}).Inc()
+					} else {
+						openHighPorts.With(prometheus.Labels{"scanned_pod": pod.ObjectMeta.Name, "scanned_namespace": pod.ObjectMeta.Namespace}).Inc()
+					}
 					log.Print(" ", port, " [open]")
 				}
 
