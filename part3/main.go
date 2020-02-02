@@ -27,9 +27,9 @@ var (
 	openPorts = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "portscanner_open_ports",
-			Help: "The amount of open ports",
+			Help: "The amount of currently detected open ports",
 		},
-		[]string{"pod", "namespace"},
+		[]string{"scanned_pod", "scanned_namespace"},
 	)
 )
 
@@ -107,7 +107,7 @@ func main() {
 				log.Printf("scanning port %d-%d...\n", 0, 65535)
 
 				openedPorts := ps.GetOpenedPort(0, 65535)
-				openPorts.With(prometheus.Labels{"pod": pod.ObjectMeta.Name, "namespace": pod.ObjectMeta.Namespace}).Set(float64(len(openedPorts)))
+				openPorts.With(prometheus.Labels{"scanned_pod": pod.ObjectMeta.Name, "scanned_namespace": pod.ObjectMeta.Namespace}).Set(float64(len(openedPorts)))
 
 				for i := 0; i < len(openedPorts); i++ {
 					port := openedPorts[i]
