@@ -111,8 +111,6 @@ func main() {
 
 			for _, pod := range podList {
 
-				portScansExecuted.With(prometheus.Labels{"scanned_pod": pod.ObjectMeta.Name, "scanned_namespace": pod.ObjectMeta.Namespace}).Inc()
-
 				log.Printf("Pod: %s in Namespace: %s - IP to scan: %s", pod.ObjectMeta.Name, pod.ObjectMeta.Namespace, pod.Status.PodIP)
 
 				// scan Pod with a 50 millisecond timeout per port in 10 concurrent threads
@@ -127,6 +125,8 @@ func main() {
 				log.Printf("scanning port %d-%d...\n", 0, 65535)
 
 				openedPorts := ps.GetOpenedPort(0, 65535)
+
+				portScansExecuted.With(prometheus.Labels{"scanned_pod": pod.ObjectMeta.Name, "scanned_namespace": pod.ObjectMeta.Namespace}).Inc()
 
 				openLowPorts.With(prometheus.Labels{"scanned_pod": pod.ObjectMeta.Name, "scanned_namespace": pod.ObjectMeta.Namespace}).Set(float64(0))
 				openHighPorts.With(prometheus.Labels{"scanned_pod": pod.ObjectMeta.Name, "scanned_namespace": pod.ObjectMeta.Namespace}).Set(float64(0))
