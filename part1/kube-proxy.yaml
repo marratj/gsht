@@ -1,0 +1,108 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  labels:
+    component: kube-proxy
+    k8s-app: kube-proxy
+    kubernetes.io/cluster-service: "true"
+  name: kube-proxy
+  namespace: kube-system
+spec:
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      k8s-app: kube-proxy
+  template:
+    metadata:
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ""
+      creationTimestamp: null
+      labels:
+        component: kube-proxy
+        k8s-app: kube-proxy
+        kubernetes.io/cluster-service: "true"
+    spec:
+      containers:
+      - command:
+        - /hyperkube
+        # command was `proxy`, which is wrong, `kube-proxy` is the correct one
+        - kube-proxy
+        - --config=/etc/kubernetes/config/proxy-config.yml
+        - --v=2
+        # image version was misconfigured with a typo
+        image: quay.io/giantswarm/hyperkube:v1.15.3
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: 10256
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 3
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: kube-proxy
+        resources:
+          requests:
+            cpu: 75m
+            memory: 80Mi
+        securityContext:
+          privileged: true
+          procMount: Default
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/ssl/certs
+          name: ssl-certs-host
+          readOnly: true
+        - mountPath: /etc/kubernetes/config/
+          name: k8s-config
+        - mountPath: /etc/kubernetes/kubeconfig/
+          name: k8s-kubeconfig
+          readOnly: true
+        - mountPath: /etc/kubernetes/ssl
+          name: ssl-certs-kubernetes
+          readOnly: true
+        - mountPath: /lib/modules
+          name: lib-modules
+          readOnly: true
+      dnsPolicy: ClusterFirst
+      hostNetwork: true
+      priorityClassName: system-node-critical
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: kube-proxy
+      serviceAccountName: kube-proxy
+      terminationGracePeriodSeconds: 30
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/master
+        operator: Exists
+      volumes:
+      - hostPath:
+          path: /etc/kubernetes/config/
+          type: ""
+        name: k8s-config
+      - hostPath:
+          path: /etc/kubernetes/config/
+          type: ""
+        name: k8s-kubeconfig
+      - hostPath:
+          path: /etc/kubernetes/ssl
+          type: ""
+        name: ssl-certs-kubernetes
+      - hostPath:
+          path: /usr/share/ca-certificates
+          type: ""
+        name: ssl-certs-host
+      - hostPath:
+          path: /lib/modules
+          type: ""
+        name: lib-modules
+  templateGeneration: 3
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 1
+    type: RollingUpdate
