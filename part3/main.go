@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"strconv"
 	"log"
 	"os"
 	"path/filepath"
@@ -131,9 +132,9 @@ func main() {
 				for i := 0; i < len(openedPorts); i++ {
 					port := openedPorts[i]
 					if port < 1024 {
-						openLowPorts.With(prometheus.Labels{"scanned_pod": pod.ObjectMeta.Name, "scanned_namespace": pod.ObjectMeta.Namespace, "scanned_port": string(port)}).Set(float64(1))
+						openLowPorts.With(prometheus.Labels{"scanned_pod": pod.ObjectMeta.Name, "scanned_namespace": pod.ObjectMeta.Namespace, "scanned_port": strconv.Itoa(port)}).Set(float64(1))
 					} else {
-						openHighPorts.With(prometheus.Labels{"scanned_pod": pod.ObjectMeta.Name, "scanned_namespace": pod.ObjectMeta.Namespace, "scanned_port": string(port)}).Set(float64(1))
+						openHighPorts.With(prometheus.Labels{"scanned_pod": pod.ObjectMeta.Name, "scanned_namespace": pod.ObjectMeta.Namespace, "scanned_port": strconv.Itoa(port)}).Set(float64(1))
 					}
 					log.Print(" ", port, " [open]")
 				}
